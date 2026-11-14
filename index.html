@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LaunchStack</title>
-<meta name="description" content="LaunchStack builds mobile apps, websites and CRMs for local businesses and founders.">
+<title>TechClaws A2Z</title>
+<meta name="description" content="TechClaws A2Z builds mobile apps, websites and CRMs for local businesses and founders.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -52,7 +52,8 @@ p{margin:0}
 header{position:sticky;top:0;z-index:20;transition:background .3s ease,border-color .3s ease;border-bottom:1px solid transparent}
 header.solid{background:rgba(6,9,18,.78);backdrop-filter:blur(14px);border-color:var(--line)}
 .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;height:70px}
-.brand{display:flex;align-items:center;gap:11px;text-decoration:none;font:800 21px/1 var(--display);letter-spacing:-0.03em}
+.brand .a2z{color:var(--kurinji)}
+.brand{display:flex;align-items:center;gap:11px;white-space:nowrap;text-decoration:none;font:800 21px/1 var(--display);letter-spacing:-0.03em}
 .mark{display:grid;gap:3px;width:24px}
 .mark i{display:block;height:5px;border-radius:2px;background:var(--ink);animation:stackup 2.8s ease-in-out infinite}
 .mark i:nth-child(1){width:60%;margin-left:40%;background:var(--kurinji)}
@@ -354,6 +355,7 @@ footer{border-color:rgba(130,116,255,.4);box-shadow:0 -1px 18px rgba(130,116,255
   footer{padding:28px 0 36px}
 }
 
+@media (max-width:480px){.nav-right .btn-primary{display:none}}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none !important;transition:none !important}
   html{scroll-behavior:auto}
@@ -368,8 +370,8 @@ footer{border-color:rgba(130,116,255,.4);box-shadow:0 -1px 18px rgba(130,116,255
 <div class="page">
 <header id="hdr">
   <div class="wrap nav">
-    <a class="brand" href="#top" aria-label="LaunchStack home">
-      <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>LaunchStack
+    <a class="brand" href="#top" aria-label="TechClaws A2Z home">
+      <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><span>TechClaws <span class="a2z">A2Z</span></span>
     </a>
     <nav aria-label="Main">
       <ul>
@@ -396,7 +398,7 @@ footer{border-color:rgba(130,116,255,.4);box-shadow:0 -1px 18px rgba(130,116,255
 <main id="top">
   <div class="wrap hero">
     <div>
-      <p class="log"><span class="pulse"></span><b>$</b> launchstack deploy --your-business</p>
+      <p class="log"><span class="pulse"></span><b>$</b> techclaws deploy --your-business</p>
       <h1>
         <span class="ln"><span>Your business,</span></span>
         <span class="ln"><span><span id="rot">online.</span><span class="caret" aria-hidden="true"></span></span></span>
@@ -572,7 +574,7 @@ footer{border-color:rgba(130,116,255,.4);box-shadow:0 -1px 18px rgba(130,116,255
         </div>
         <div class="direct">
           <div><span class="log">WhatsApp / phone</span><strong id="phoneText">+91 90801 65214</strong></div>
-          <div><span class="log">Email</span><strong id="emailText">hello@launchstack.in</strong></div>
+          <div><span class="log">Email</span><strong id="emailText">hello@techclawsa2z.in</strong></div>
         </div>
       </div>
 
@@ -600,7 +602,7 @@ footer{border-color:rgba(130,116,255,.4);box-shadow:0 -1px 18px rgba(130,116,255
 
 <footer>
   <div class="wrap">
-    <span>© 2026 LaunchStack. Apps, websites and CRMs.</span>
+    <span>© 2026 TechClaws A2Z. Apps, websites and CRMs.</span>
   </div>
 </footer>
 </div>
@@ -608,7 +610,7 @@ footer{border-color:rgba(130,116,255,.4);box-shadow:0 -1px 18px rgba(130,116,255
 <script>
 /* ---------- Contact details: change these two lines ---------- */
 const WHATSAPP_NUMBER = "919080165214"; // country code + number, no spaces or +
-const EMAIL = "hello@launchstack.in";
+const EMAIL = "hello@techclawsa2z.in";
 
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const $ = id => document.getElementById(id);
@@ -818,7 +820,7 @@ addEventListener("scroll", onScrollHdr, { passive: true }); onScrollHdr();
     if (m.length > 1) return '<span class="tk-attr">' + m + '</span>';
     return esc(m);
   });
-  const comment = sc => `<span class="l"><span class="tk-com">// ${sc.kind} · built by LaunchStack</span></span>`;
+  const comment = sc => `<span class="l"><span class="tk-com">// ${sc.kind} · built by TechClaws A2Z</span></span>`;
 
   function renderFull(sc){
     file.textContent = sc.file; kind.textContent = sc.kind;
@@ -902,13 +904,13 @@ if (!REDUCE && matchMedia("(hover: hover)").matches) document.querySelectorAll("
 (() => {
   const out = $("termOut");
   const L = [
-    ['p', '$ launchstack new --client "your business"'],
+    ['p', '$ techclaws new --client "your business"'],
     ['dim', '› understanding how you work … done'],
     ['dim', '› clickable prototype ready, shared on WhatsApp'],
     ['dim', '› your feedback: 3 changes … applied'],
-    ['p', '$ launchstack build --app --web --crm'],
+    ['p', '$ techclaws build --app --web --crm'],
     ['dim', '› building … tested on 12 phones'],
-    ['p', '$ launchstack deploy --domain yourbusiness.in'],
+    ['p', '$ techclaws deploy --domain yourbusiness.in'],
     ['ok', '✓ live at https://yourbusiness.in'],
     ['ok', '✓ support switched on']
   ];
@@ -952,7 +954,7 @@ if (!/X/.test(WHATSAPP_NUMBER)){
 const btn = $("sendWa");
 function buildLink(){
   const msg = [
-    "Hi LaunchStack, I'd like to discuss a project.",
+    "Hi TechClaws A2Z, I'd like to discuss a project.",
     "Name: " + $("f-name").value.trim(),
     $("f-biz").value.trim() ? "Business/idea: " + $("f-biz").value.trim() : "",
     "Need: " + $("f-need").value,
