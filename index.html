@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LaunchStack</title>
+<meta name="description" content="LaunchStack builds mobile apps, websites and CRMs for local businesses and founders.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a living circuit board behind everything. Packets of data run along PCB traces,
+   code fragments drift upward; the page content sits on top as glass "layers" of a stack.
+   Single dark theme by choice. Accent = neelakurinji violet (the flower behind the name
+   "Blue Mountains"), signal green for "built / live". */
+:root{
+  --bg:#060912;
+  --surface:rgba(16,21,40,.72);
+  --surface-solid:#0E1324;
+  --line:#1E2644;
+  --ink:#E9EBF7;
+  --muted:#8C93B3;
+  --kurinji:#8274FF;
+  --kurinji-deep:#5B4BF0;
+  --signal:#3BE29A;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+  --radius:16px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--kurinji);outline-offset:3px;border-radius:6px}
+h1,h2,h3{font-family:var(--display);line-height:1.04;margin:0;text-wrap:balance;letter-spacing:-0.025em}
+p{margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px;position:relative}
+.log{font:500 12px/1 var(--mono);letter-spacing:.04em;color:var(--muted);text-transform:lowercase}
+.log b{color:var(--kurinji);font-weight:500}
+
+/* Background canvas + vignette */
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+.vignette{position:fixed;inset:0;z-index:0;pointer-events:none;background:
+  radial-gradient(1200px 600px at 75% -10%, rgba(130,116,255,.16), transparent 60%),
+  radial-gradient(900px 500px at -10% 110%, rgba(59,226,154,.07), transparent 60%),
+  radial-gradient(ellipse at center, transparent 40%, rgba(6,9,18,.75) 100%)}
+.page{position:relative;z-index:1}
+
+/* Nav */
+header{position:sticky;top:0;z-index:20;transition:background .3s ease,border-color .3s ease;border-bottom:1px solid transparent}
+header.solid{background:rgba(6,9,18,.78);backdrop-filter:blur(14px);border-color:var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;height:70px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;font:800 21px/1 var(--display);letter-spacing:-0.03em}
+.mark{display:grid;gap:3px;width:24px}
+.mark i{display:block;height:5px;border-radius:2px;background:var(--ink);animation:stackup 2.8s ease-in-out infinite}
+.mark i:nth-child(1){width:60%;margin-left:40%;background:var(--kurinji)}
+.mark i:nth-child(2){width:80%;margin-left:20%;animation-delay:.15s}
+.mark i:nth-child(3){animation-delay:.3s}
+@keyframes stackup{0%,70%,100%{transform:none}80%{transform:translateY(-2px)}}
+.nav ul{display:flex;gap:30px;list-style:none;margin:0;padding:0}
+.nav ul a{text-decoration:none;font-weight:500;color:var(--muted);position:relative;transition:color .2s}
+.nav ul a::after{content:"";position:absolute;left:0;right:100%;bottom:-6px;height:2px;background:var(--kurinji);transition:right .25s ease}
+.nav ul a:hover{color:var(--ink)}
+.nav ul a:hover::after{right:0}
+@media (max-width:860px){.nav ul{display:none}}
+
+.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border-radius:999px;font:600 15px/1 var(--body);text-decoration:none;border:1px solid transparent;cursor:pointer;position:relative;transition:transform .2s ease, box-shadow .3s ease, border-color .2s;will-change:transform}
+.btn-primary{background:linear-gradient(180deg,var(--kurinji),var(--kurinji-deep));color:#fff;box-shadow:0 0 0 rgba(130,116,255,0)}
+.btn-primary:hover{box-shadow:0 10px 40px -8px rgba(130,116,255,.7)}
+.btn-ghost{border-color:var(--line);background:rgba(16,21,40,.5);backdrop-filter:blur(8px)}
+.btn-ghost:hover{border-color:var(--kurinji)}
+.btn .arr{transition:transform .2s}
+.btn:hover .arr{transform:translateX(3px)}
+
+/* Hero */
+.hero{padding:40px 0 36px;display:grid;grid-template-columns:1.02fr .98fr;gap:52px;align-items:center;}
+.hero .log{margin-bottom:22px;display:inline-flex;gap:10px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:rgba(16,21,40,.55);backdrop-filter:blur(6px)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--signal);box-shadow:0 0 0 0 rgba(59,226,154,.6);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 10px rgba(59,226,154,0)}100%{box-shadow:0 0 0 0 rgba(59,226,154,0)}}
+.hero h1{font-size:clamp(42px,5.6vw,76px);font-weight:800}
+.hero h1 .ln{display:block;overflow:hidden;padding-bottom:.06em;white-space:nowrap}
+.hero h1 .ln > span{display:inline-block;animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+.hero h1 .ln:nth-child(2) > span{animation-delay:.12s}
+.hero h1 .ln:nth-child(3) > span{animation-delay:.24s}
+@keyframes rise{from{transform:translateY(105%)}to{transform:none}}
+#rot{color:var(--kurinji);background:linear-gradient(90deg,var(--kurinji),#B5ACFF,var(--kurinji));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:sheen 4s linear infinite}
+@keyframes sheen{to{background-position:-200% 0}}
+.caret{display:inline-block;width:.07em;height:.82em;background:var(--kurinji);margin-left:.04em;vertical-align:-.04em;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.hero .lede{margin-top:26px;font-size:20px;color:var(--muted);max-width:36ch;animation:fadeup .9s .4s both}
+.hero .ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px;animation:fadeup .9s .55s both}
+@keyframes fadeup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (max-width:960px){.hero{grid-template-columns:1fr;min-height:0;max-height:none;padding:40px 0 64px}}
+
+/* IDE builder */
+.ide{border:1px solid var(--line);border-radius:18px;background:rgba(10,14,28,.82);backdrop-filter:blur(12px);box-shadow:0 40px 120px -30px rgba(91,75,240,.45), inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden;animation:fadeup 1s .3s both;position:relative}
+.ide::before{content:"";position:absolute;inset:-1px;border-radius:18px;padding:1px;background:conic-gradient(from var(--ang,0deg), transparent 0 70%, var(--kurinji) 85%, transparent 100%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:spin 6s linear infinite;pointer-events:none}
+@property --ang{syntax:"<angle>";inherits:false;initial-value:0deg}
+@keyframes spin{to{--ang:360deg}}
+.ide-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font:500 12px/1 var(--mono);color:var(--muted)}
+.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:#262E4E}
+.dots i:nth-child(1){background:#FF5F57}.dots i:nth-child(2){background:#FEBC2E}.dots i:nth-child(3){background:#28C840}
+.tab{color:var(--ink)}
+.badge{margin-left:auto;padding:5px 9px;border-radius:999px;border:1px solid var(--line);transition:all .3s}
+.badge.live{color:var(--signal);border-color:rgba(59,226,154,.4);background:rgba(59,226,154,.08)}
+.ide-body{display:grid;grid-template-columns:1.25fr .75fr;min-height:390px}
+.code{margin:0;padding:18px 16px;font:400 12.5px/1.75 var(--mono);color:#C9CCE0;white-space:pre-wrap;word-break:break-word;border-right:1px solid var(--line);counter-reset:ln;transition:opacity .4s}
+.code .l{display:block;padding-left:2.6em;position:relative}
+.code .l::before{counter-increment:ln;content:counter(ln);position:absolute;left:0;width:1.8em;text-align:right;color:#3A4366}
+.tk-tag{color:#A79DFF}.tk-attr{color:#6FD3F7}.tk-str{color:var(--signal)}.tk-com{color:#56608A}
+.cur{display:inline-block;width:7px;height:1.1em;background:var(--kurinji);vertical-align:-3px;animation:blink 1s steps(1) infinite}
+.phone-wrap{display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 50% 30%, rgba(130,116,255,.12), transparent 70%)}
+.phone{width:170px;height:340px;border-radius:26px;border:2px solid #2A3358;background:#0A0E1C;padding:10px;position:relative;box-shadow:0 20px 60px -20px rgba(0,0,0,.8)}
+.phone::before{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:46px;height:5px;border-radius:4px;background:#1E2644}
+.screen{height:100%;border-radius:18px;background:#F4F5FA;overflow:hidden;padding:18px 9px 9px;display:flex;flex-direction:column;gap:7px;transition:opacity .4s;color:#141A2E;font-family:var(--body)}
+.blk{animation:pop .45s cubic-bezier(.2,1.4,.4,1) both;border-radius:8px}
+@keyframes pop{from{opacity:0;transform:scale(.85) translateY(8px)}to{opacity:1;transform:none}}
+.b-head{font:800 12px/1 var(--display);display:flex;justify-content:space-between;align-items:center;padding:2px 2px}
+.b-head i{width:14px;height:10px;border-top:2px solid #141A2E;border-bottom:2px solid #141A2E}
+.b-search{background:#fff;border:1px solid #DDE0EA;border-radius:999px;font-size:9px;padding:6px 9px;color:#7A819C}
+.b-banner{background:linear-gradient(120deg,#5B4BF0,#8274FF);color:#fff;font:700 10px/1.3 var(--display);padding:10px}
+.b-banner small{display:block;font:500 8px/1.4 var(--body);opacity:.85}
+.b-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.b-grid span{height:38px;border-radius:6px;background:#E3E6F0;position:relative}
+.b-grid span::after{content:"";position:absolute;left:5px;bottom:5px;width:50%;height:4px;border-radius:2px;background:#B9BED1}
+.b-cta{background:#25D366;color:#fff;font:700 10px/1 var(--body);text-align:center;padding:9px;margin-top:auto}
+.b-hero{height:70px;background:linear-gradient(180deg,#9CC9A8,#3F7D5A);position:relative;overflow:hidden}
+.b-hero::after{content:"";position:absolute;left:-10%;right:-10%;bottom:-18px;height:40px;border-radius:50%;background:#2F6447}
+.b-row{display:flex;gap:5px}.b-row span{flex:1;height:30px;border-radius:6px;background:#E3E6F0}
+.b-map{height:44px;background:repeating-linear-gradient(45deg,#E3E6F0 0 6px,#ECEEF5 6px 12px);position:relative}
+.b-map::after{content:"";position:absolute;left:50%;top:40%;width:10px;height:10px;border-radius:50% 50% 50% 0;background:#E5484D;transform:rotate(-45deg)}
+.b-book{background:#141A2E;color:#fff;font:700 10px/1 var(--body);text-align:center;padding:9px;margin-top:auto}
+.b-kpi{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.b-kpi div{background:#fff;border:1px solid #E3E6F0;border-radius:6px;padding:6px;font:800 12px/1.1 var(--display)}
+.b-kpi small{display:block;font:500 7px/1.3 var(--body);color:#7A819C}
+.b-chart{height:58px;background:#fff;border:1px solid #E3E6F0;display:flex;align-items:flex-end;gap:4px;padding:6px}
+.b-chart span{flex:1;background:#8274FF;border-radius:2px 2px 0 0;animation:grow .6s cubic-bezier(.2,.8,.2,1) both}
+@keyframes grow{from{transform:scaleY(0);transform-origin:bottom}to{transform:scaleY(1);transform-origin:bottom}}
+.b-alert{background:#FFF1EC;color:#C2412D;font:600 9px/1.3 var(--body);padding:7px}
+.b-list{display:grid;gap:4px}.b-list span{height:12px;border-radius:4px;background:#E3E6F0}
+.ide-cap{padding:10px 16px;border-top:1px solid var(--line);font:500 11px/1 var(--mono);color:var(--muted);display:flex;justify-content:space-between}
+@media (max-width:560px){.ide-body{grid-template-columns:1fr}.code{border-right:0;border-bottom:1px solid var(--line);min-height:210px}}
+
+/* Marquee */
+.marquee{border-block:1px solid var(--line);background:rgba(10,14,28,.6);backdrop-filter:blur(6px);overflow:hidden;padding:14px 0}
+.track{display:flex;gap:48px;width:max-content;animation:scroll 38s linear infinite;font:500 15px/1 var(--mono);color:var(--muted)}
+.track span{display:flex;align-items:center;gap:48px;white-space:nowrap}
+.track span::after{content:"◆";color:var(--kurinji);font-size:9px}
+.marquee:hover .track{animation-play-state:paused}
+@keyframes scroll{to{transform:translateX(-50%)}}
+
+/* Sections */
+section{padding:52px 0}
+@media (max-width:700px){section{padding:40px 0}}
+.head{display:grid;gap:14px;margin-bottom:30px;max-width:680px}
+.head h2{font-size:clamp(34px,4.8vw,60px);font-weight:800}
+.head p{color:var(--muted);font-size:18px}
+.grad{background:linear-gradient(90deg,var(--ink),#B5ACFF);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+.rv{opacity:.5;transform:translateY(28px);transition:opacity .9s ease, transform .9s cubic-bezier(.2,.8,.2,1)}
+.rv.on{opacity:1;transform:none}
+
+/* Spotlight cards */
+.card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(10px);overflow:hidden;transition:transform .3s ease,border-color .3s}
+.card::before{content:"";position:absolute;inset:0;background:radial-gradient(420px circle at var(--mx,-200px) var(--my,-200px), rgba(130,116,255,.18), transparent 45%);opacity:0;transition:opacity .3s;pointer-events:none}
+.card:hover::before{opacity:1}
+.card:hover{transform:translateY(-4px);border-color:rgba(130,116,255,.45)}
+
+.services{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.svc{padding:32px;display:grid;gap:16px;align-content:start}
+.svc .top{display:flex;justify-content:space-between;align-items:center}
+.svc .n{font:500 12px/1 var(--mono);color:var(--kurinji)}
+.svc .ico{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:rgba(130,116,255,.12);color:var(--kurinji);border:1px solid rgba(130,116,255,.25)}
+.svc .ico svg{transition:transform .5s cubic-bezier(.2,1.4,.4,1)}
+.svc:hover .ico svg{transform:rotate(-8deg) scale(1.12)}
+.svc h3{font-size:28px;font-weight:700}
+.svc p{color:var(--muted)}
+.svc ul{margin:4px 0 0;padding:0;list-style:none;display:grid;gap:10px;font-size:15px}
+.svc li{padding-left:22px;position:relative}
+.svc li::before{content:"›";position:absolute;left:0;color:var(--kurinji);font-family:var(--mono)}
+@media (max-width:960px){.services{grid-template-columns:1fr}}
+
+.who{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.aud{padding:40px;display:grid;gap:20px;align-content:start}
+.aud h3{font-size:34px;font-weight:800}
+.aud > p{color:var(--muted)}
+.aud ul{margin:0;padding:0;list-style:none;display:grid;gap:12px}
+.aud li{display:grid;grid-template-columns:24px 1fr;gap:8px}
+.aud li::before{content:"→";font-family:var(--mono);color:var(--kurinji)}
+.aud.founder{background:linear-gradient(160deg,rgba(91,75,240,.28),rgba(16,21,40,.72) 60%)}
+.towns{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.towns span{font:500 12px/1 var(--mono);padding:9px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(6,9,18,.5);transition:border-color .2s,color .2s}
+.towns span:hover{border-color:var(--signal);color:var(--signal)}
+@media (max-width:960px){.who{grid-template-columns:1fr}}
+
+/* Process */
+.steps{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding-top:36px}
+.rail{position:absolute;top:8px;left:0;right:0;height:2px;background:var(--line);border-radius:2px;overflow:hidden}
+.rail i{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--kurinji),var(--signal));box-shadow:0 0 18px var(--kurinji);transition:width .15s linear}
+.step{display:grid;gap:12px;align-content:start;position:relative}
+.step .node{position:absolute;top:-36px;left:0;width:18px;height:18px;border-radius:50%;background:var(--bg);border:2px solid var(--line);transition:all .4s}
+.step.lit .node{border-color:var(--kurinji);background:var(--kurinji);box-shadow:0 0 0 6px rgba(130,116,255,.18),0 0 24px var(--kurinji)}
+.step .k{font:500 12px/1 var(--mono);color:var(--muted)}
+.step.lit .k{color:var(--kurinji)}
+.step h3{font-size:24px;font-weight:700}
+.step p{font-size:15px;color:var(--muted)}
+@media (max-width:860px){.steps{grid-template-columns:1fr;padding-top:0;padding-left:40px}.rail{top:0;bottom:0;left:8px;right:auto;width:2px;height:auto}.rail i{width:100%;height:var(--p,0%)}.step .node{top:4px;left:-40px}}
+
+/* Terminal */
+.term{margin-top:36px;border:1px solid var(--line);border-radius:var(--radius);background:rgba(6,9,18,.85);backdrop-filter:blur(10px);overflow:hidden;max-width:760px}
+.term .ide-bar{background:rgba(16,21,40,.6)}
+.term pre{margin:0;padding:22px 20px;font:400 13.5px/1.9 var(--mono);color:#C9CCE0;min-height:260px;white-space:pre-wrap}
+.term .p{color:var(--kurinji)}.term .ok{color:var(--signal)}.term .dim{color:#56608A}
+
+/* Products */
+.work{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.visit{justify-self:start;margin-top:4px;font:600 15px/1 var(--body);color:#B5ACFF;text-decoration:none;display:inline-flex;gap:8px;padding-bottom:4px;border-bottom:1px solid rgba(181,172,255,.35);transition:color .2s,border-color .2s}
+.visit:hover{color:#fff;border-color:var(--kurinji)}
+.visit .arr{transition:transform .2s}.visit:hover .arr{transform:translate(2px,-2px)}
+.proj{padding:36px;display:grid;gap:16px;align-content:start}
+.proj .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.pill{font:500 11px/1 var(--mono);padding:7px 11px;border-radius:999px;background:rgba(130,116,255,.14);color:#B5ACFF;white-space:nowrap;display:inline-flex;gap:7px;align-items:center}
+.pill.live{background:rgba(59,226,154,.1);color:var(--signal)}
+.pill.live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--signal);animation:pulse 2s infinite}
+.proj h3{font-size:32px;font-weight:800}
+.proj p{color:var(--muted)}
+.proj .tags{display:flex;flex-wrap:wrap;gap:6px;font:500 12px/1 var(--mono);color:var(--muted)}
+.proj .tags span{padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:rgba(6,9,18,.4)}
+@media (max-width:1060px){.work{grid-template-columns:1fr 1fr}}
+@media (max-width:700px){.work{grid-template-columns:1fr}}
+
+/* Contact */
+.contact{display:grid;grid-template-columns:.9fr 1.1fr;gap:56px;align-items:start}
+.contact .head{margin-bottom:28px}
+.direct{display:grid}
+.direct div{display:grid;gap:6px;padding:18px 0;border-top:1px solid var(--line)}
+.direct .log{text-transform:none}
+.direct strong{font:600 20px/1.3 var(--body)}
+form{padding:32px;display:grid;gap:18px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+label{display:grid;gap:7px;font-weight:600;font-size:14px}
+input,select,textarea{font:400 16px/1.4 var(--body);color:var(--ink);background:rgba(6,9,18,.7);border:1px solid var(--line);border-radius:12px;padding:13px 14px;width:100%;transition:border-color .2s, box-shadow .2s}
+select option{background:var(--surface-solid)}
+textarea{min-height:120px;resize:vertical}
+input::placeholder,textarea::placeholder{color:#5A6285}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--kurinji);box-shadow:0 0 0 4px rgba(130,116,255,.18)}
+.formnote{font-size:13px;color:var(--muted)}
+.err{color:#FF8A73;font-size:14px;min-height:1em}
+@media (max-width:960px){.contact{grid-template-columns:1fr}}
+@media (max-width:520px){.row{grid-template-columns:1fr}}
+
+footer{border-top:1px solid var(--line);padding:36px 0 52px;background:rgba(6,9,18,.7)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;color:var(--muted);font-size:14px}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+
+<div class="page">
+<header id="hdr">
+  <div class="wrap nav">
+    <a class="brand" href="#top" aria-label="LaunchStack home">
+      <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>LaunchStack
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#who">Who we help</a></li>
+        <li><a href="#process">How we work</a></li>
+        <li><a href="#work">Our products</a></li>
+      </ul>
+    </nav>
+    <a class="btn btn-primary mag" href="#contact">Start a project <span class="arr">→</span></a>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div>
+      <p class="log"><span class="pulse"></span><b>$</b> launchstack deploy --your-business</p>
+      <h1>
+        <span class="ln"><span>Your business,</span></span>
+        <span class="ln"><span><span id="rot">online.</span><span class="caret" aria-hidden="true"></span></span></span>
+      </h1>
+      <p class="lede">We build mobile apps, websites and CRMs for local businesses and founders.</p>
+      <div class="ctas">
+        <a class="btn btn-primary mag" href="#contact">Talk to us, free <span class="arr">→</span></a>
+        <a class="btn btn-ghost mag" href="#process">See how we work</a>
+      </div>
+    </div>
+
+    <div class="ide" aria-label="Animated demo: code being written and an app appearing on a phone">
+      <div class="ide-bar">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="tab" id="ideFile">demo/supermarket-app.jsx</span>
+        <span class="badge live" id="ideBadge">✓ live</span>
+      </div>
+      <div class="ide-body">
+        <pre class="code" id="code"></pre>
+        <div class="phone-wrap"><div class="phone"><div class="screen" id="screen"></div></div></div>
+      </div>
+      <div class="ide-cap"><span>live demo · what we build</span><span id="ideKind">mobile app</span></div>
+    </div>
+  </div>
+
+  <div class="marquee" aria-label="Tools and features we work with">
+    <div class="track">
+      <span>Android apps</span><span>iPhone apps</span><span>React</span><span>Next.js</span><span>Supabase</span><span>WhatsApp ordering</span><span>UPI and Razorpay</span><span>Google Maps</span><span>SEO</span><span>CRMs</span><span>Dashboards</span><span>Cloud hosting</span>
+      <span>Android apps</span><span>iPhone apps</span><span>React</span><span>Next.js</span><span>Supabase</span><span>WhatsApp ordering</span><span>UPI and Razorpay</span><span>Google Maps</span><span>SEO</span><span>CRMs</span><span>Dashboards</span><span>Cloud hosting</span>
+    </div>
+  </div>
+
+  <section id="services">
+    <div class="wrap">
+      <div class="head rv">
+        <p class="log"><b>01</b> / what we build</p>
+        <h2>Software only. <span class="grad">Done properly.</span></h2>
+        <p>We only build software. You get one team for the app, the website and the system that runs your business behind them.</p>
+      </div>
+      <div class="services">
+        <article class="card svc rv">
+          <div class="top">
+            <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></div>
+            <span class="n">layer.app</span>
+          </div>
+          <h3>Mobile apps</h3>
+          <p>Apps your customers and staff actually open, for Android and iPhone.</p>
+          <ul>
+            <li>Online ordering and home delivery</li>
+            <li>Bookings and appointments</li>
+            <li>Marketplaces that connect buyers and sellers</li>
+          </ul>
+        </article>
+        <article class="card svc rv">
+          <div class="top">
+            <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 9h20M6 6.5h.01M9 6.5h.01"/></svg></div>
+            <span class="n">layer.web</span>
+          </div>
+          <h3>Websites</h3>
+          <p>Fast sites that show up on Google and load quickly on a phone over mobile data.</p>
+          <ul>
+            <li>Business and brand websites</li>
+            <li>Online stores and catalogues</li>
+            <li>WhatsApp and Google Maps built in</li>
+          </ul>
+        </article>
+        <article class="card svc rv">
+          <div class="top">
+            <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+            <span class="n">layer.crm</span>
+          </div>
+          <h3>CRMs and business software</h3>
+          <p>Software shaped around how your business already works, so you don't have to bend to a generic package.</p>
+          <ul>
+            <li>Customer lists, follow-ups and loyalty</li>
+            <li>Stock, billing and supplier records</li>
+            <li>Dashboards for owners and staff</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="who">
+    <div class="wrap">
+      <div class="head rv">
+        <p class="log"><b>02</b> / who we help</p>
+        <h2>Local businesses. <span class="grad">Founders with a big idea.</span></h2>
+      </div>
+      <div class="who">
+        <article class="card aud rv">
+          <h3>Local businesses</h3>
+          <p>Supermarkets, stores, hotels, homestays and service businesses that want more customers and less paperwork.</p>
+          <ul>
+            <li>Take orders on WhatsApp and online</li>
+            <li>Keep track of stock and regular customers</li>
+            <li>Get found when people search nearby</li>
+          </ul>
+        </article>
+        <article class="card aud founder rv">
+          <h3>Founders and startups</h3>
+          <p>You have the idea. We help you see it, test it and launch it, without a big agency bill.</p>
+          <ul>
+            <li>Clickable prototype before the real build</li>
+            <li>First version launched in weeks</li>
+            <li>We grow the product with you after launch</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="process">
+    <div class="wrap">
+      <div class="head rv">
+        <p class="log"><b>03</b> / how we work</p>
+        <h2>You see it working <span class="grad">before we build it.</span></h2>
+        <p>Every project starts with a prototype you can click through on your own phone, so there are no surprises later.</p>
+      </div>
+      <div class="steps" id="steps">
+        <div class="rail"><i id="railFill"></i></div>
+        <div class="step"><span class="node"></span><span class="k">step 1</span><h3>Talk</h3><p>A free call or visit. We learn how your business runs and what needs fixing.</p></div>
+        <div class="step"><span class="node"></span><span class="k">step 2</span><h3>Prototype</h3><p>A clickable version of your app or site. You try it and change it until it feels right.</p></div>
+        <div class="step"><span class="node"></span><span class="k">step 3</span><h3>Build and launch</h3><p>We build the real thing, test it with you and put it live.</p></div>
+        <div class="step"><span class="node"></span><span class="k">step 4</span><h3>Support</h3><p>Fixes, updates and new features as you grow. One phone call away.</p></div>
+      </div>
+
+      <div class="term rv" id="term">
+        <div class="ide-bar"><span class="dots"><i></i><i></i><i></i></span><span class="tab">terminal · example project</span></div>
+        <pre id="termOut"></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="work">
+    <div class="wrap">
+      <div class="head rv">
+        <p class="log"><b>04</b> / built in-house</p>
+        <h2>We build <span class="grad">our own products</span> too.</h2>
+        <p>We use the same team and the same process for our clients.</p>
+      </div>
+      <div class="work">
+        <article class="card proj rv">
+          <div class="top"><span class="log">ootyescapes.com</span><span class="pill live">live</span></div>
+          <h3>Ooty Escapes</h3>
+          <p>The website for a curated travel company in the Nilgiris, with packages, sightseeing tours and enquiries. It's animated, premium and fast on phones.</p>
+          <div class="tags"><span>website</span><span>travel</span><span>animation</span></div>
+          <a class="visit" href="https://ootyescapes.com" target="_blank" rel="noopener">Visit ootyescapes.com <span class="arr">↗</span></a>
+        </article>
+        <article class="card proj rv">
+          <div class="top"><span class="log">farmlink</span><span class="pill live">final testing</span></div>
+          <h3>FarmLink</h3>
+          <p>A marketplace that connects vegetable farmers directly with traders. It covers crop listings with photos, offers and counter-offers, payments, and pickup-to-delivery tracking.</p>
+          <div class="tags"><span>web app</span><span>marketplace</span><span>payments</span><span>logistics</span></div>
+        </article>
+        <article class="card proj rv">
+          <div class="top"><span class="log">buytogether</span><span class="pill">in development</span></div>
+          <h3>BuyTogether</h3>
+          <p>Monthly home essentials, delivered to your door. When households buy together, everyone saves together.</p>
+          <div class="tags"><span>app</span><span>subscriptions</span><span>delivery</span></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="wrap contact">
+      <div class="rv">
+        <div class="head">
+          <p class="log"><b>05</b> / start a project</p>
+          <h2>Tell us what you want <span class="grad">to build.</span></h2>
+          <p>We reply within a day. The first conversation is always free.</p>
+        </div>
+        <div class="direct">
+          <div><span class="log">WhatsApp / phone</span><strong id="phoneText">+91 90801 65214</strong></div>
+          <div><span class="log">Email</span><strong id="emailText">hello@launchstack.in</strong></div>
+        </div>
+      </div>
+
+      <form id="enquiry" class="card rv" novalidate>
+        <div class="row">
+          <label for="f-name">Your name<input id="f-name" name="name" autocomplete="name" required></label>
+          <label for="f-biz">Business or idea<input id="f-biz" name="business" placeholder="e.g. Sri Murugan Supermarket"></label>
+        </div>
+        <label for="f-need">What do you need?
+          <select id="f-need" name="need">
+            <option>A website</option>
+            <option>A mobile app</option>
+            <option>A CRM or business software</option>
+            <option>Not sure yet, let's talk</option>
+          </select>
+        </label>
+        <label for="f-msg">Tell us a little more<textarea id="f-msg" name="message" placeholder="What does your business do, and what would you like customers or staff to be able to do?"></textarea></label>
+        <p class="err" id="f-err" role="alert"></p>
+        <a class="btn btn-primary mag" id="sendWa" href="#" style="justify-self:start">Send enquiry <span class="arr">→</span></a>
+        <p class="formnote">This opens WhatsApp with your message ready to send.</p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 LaunchStack. Apps, websites and CRMs.</span>
+  </div>
+</footer>
+</div>
+
+<script>
+/* ---------- Contact details: change these two lines ---------- */
+const WHATSAPP_NUMBER = "919080165214"; // country code + number, no spaces or +
+const EMAIL = "hello@launchstack.in";
+
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = id => document.getElementById(id);
+
+/* ---------- Background: living circuit board ---------- */
+(() => {
+  const cv = $("bg"), cx = cv.getContext("2d");
+  let W, H, DPR, traces = [], tokens = [], grid;
+  const G = 36;
+  const mouse = { x: -9999, y: -9999 };
+  const DIRS = [[1,0],[0,1],[-1,0],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+  const WORDS = ["</>", "{ }", "fn()", "<div>", "git push", "npm run build", "200 OK", "const app", "=>", "SELECT *", "deploy ✓",
+                 "useState()", "<App />", "api/orders", "await", "flex", "#8274FF", "onClick", "import", "return", "404", "UPI", "</html>"];
+
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    cv.style.width = W + "px"; cv.style.height = H + "px";
+    cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    grid = document.createElement("canvas");
+    grid.width = W * DPR; grid.height = H * DPR;
+    const g = grid.getContext("2d"); g.setTransform(DPR,0,0,DPR,0,0);
+    g.fillStyle = "rgba(140,147,179,0.10)";
+    for (let x = 0; x <= W; x += G) for (let y = 0; y <= H; y += G) g.fillRect(x - .6, y - .6, 1.2, 1.2);
+    const target = Math.max(16, Math.min(52, Math.round(W * H / 26000)));
+    traces = []; for (let i = 0; i < target; i++) traces.push(makeTrace(Math.random()));
+    const tk = Math.max(8, Math.min(22, Math.round(W / 70)));
+    tokens = []; for (let i = 0; i < tk; i++) tokens.push(makeToken(true));
+  }
+
+  function makeTrace(startLife = 0){
+    let x = Math.round(Math.random() * W / G) * G, y = Math.round(Math.random() * H / G) * G;
+    const pts = [[x, y]];
+    let d = Math.floor(Math.random() * 4);
+    const segs = 2 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < segs; i++){
+      const n = 2 + Math.floor(Math.random() * 5);
+      x += DIRS[d][0] * n * G; y += DIRS[d][1] * n * G;
+      pts.push([x, y]);
+      const opts = [];
+      for (let k = 0; k < 8; k++){
+        if (k === d) continue;
+        const dot = DIRS[k][0]*DIRS[d][0] + DIRS[k][1]*DIRS[d][1];
+        if (dot >= 0) opts.push(k);
+      }
+      d = opts[Math.floor(Math.random() * opts.length)];
+    }
+    const lens = []; let total = 0;
+    for (let i = 1; i < pts.length; i++){ const l = Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]); lens.push(l); total += l; }
+    const max = 7 + Math.random() * 8;
+    const green = Math.random() < .18;
+    const packets = [];
+    const np = 1 + (Math.random() < .35 ? 1 : 0);
+    for (let i = 0; i < np; i++) packets.push({ s: Math.random() * total, v: 70 + Math.random() * 110 });
+    return { pts, lens, total, life: startLife * max, max, green, packets };
+  }
+
+  function makeToken(anyY){
+    return { x: Math.random() * W, y: anyY ? Math.random() * H : H + 30, v: 6 + Math.random() * 12,
+             s: 11 + Math.random() * 4, a: .05 + Math.random() * .09, t: WORDS[Math.floor(Math.random() * WORDS.length)] };
+  }
+
+  function at(tr, s){
+    s = Math.max(0, Math.min(tr.total, s));
+    for (let i = 0; i < tr.lens.length; i++){
+      if (s <= tr.lens[i]){
+        const f = tr.lens[i] ? s / tr.lens[i] : 0, a = tr.pts[i], b = tr.pts[i+1];
+        return [a[0] + (b[0]-a[0]) * f, a[1] + (b[1]-a[1]) * f];
+      }
+      s -= tr.lens[i];
+    }
+    return tr.pts[tr.pts.length - 1];
+  }
+
+  function draw(dt){
+    cx.clearRect(0, 0, W, H);
+    cx.drawImage(grid, 0, 0, W, H);
+
+    // mouse spotlight
+    if (mouse.x > -999){
+      const rg = cx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 260);
+      rg.addColorStop(0, "rgba(130,116,255,0.10)"); rg.addColorStop(1, "rgba(130,116,255,0)");
+      cx.fillStyle = rg; cx.fillRect(mouse.x - 260, mouse.y - 260, 520, 520);
+    }
+
+    // code tokens
+    cx.textBaseline = "middle";
+    for (const t of tokens){
+      t.y -= t.v * dt;
+      if (t.y < -30) Object.assign(t, makeToken(false));
+      const edge = Math.min(1, t.y / 120, (H - t.y) / 120);
+      const near = Math.max(0, 1 - Math.hypot(t.x - mouse.x, t.y - mouse.y) / 200);
+      cx.font = `500 ${t.s}px "JetBrains Mono", monospace`;
+      cx.fillStyle = `rgba(181,172,255,${Math.max(0, (t.a + near * .35) * edge)})`;
+      cx.fillText(t.t, t.x, t.y);
+    }
+
+    // traces
+    for (let i = 0; i < traces.length; i++){
+      const tr = traces[i];
+      tr.life += dt;
+      if (tr.life > tr.max){ traces[i] = makeTrace(0); continue; }
+      const a = Math.min(1, tr.life / 1.2, (tr.max - tr.life) / 1.6);
+      const rgb = tr.green ? "59,226,154" : "130,116,255";
+
+      cx.lineWidth = 1;
+      cx.strokeStyle = `rgba(${rgb},${0.13 * a})`;
+      cx.beginPath(); cx.moveTo(tr.pts[0][0], tr.pts[0][1]);
+      for (let k = 1; k < tr.pts.length; k++) cx.lineTo(tr.pts[k][0], tr.pts[k][1]);
+      cx.stroke();
+
+      const [sx, sy] = tr.pts[0], [ex, ey] = tr.pts[tr.pts.length - 1];
+      cx.strokeStyle = `rgba(${rgb},${0.35 * a})`;
+      cx.beginPath(); cx.arc(sx, sy, 3, 0, Math.PI * 2); cx.stroke();
+      cx.fillStyle = `rgba(${rgb},${0.30 * a})`;
+      cx.fillRect(ex - 3, ey - 3, 6, 6);
+
+      for (const p of tr.packets){
+        p.s += p.v * dt;
+        if (p.s > tr.total + 60) p.s = -20;
+        const [px, py] = at(tr, p.s);
+        const near = Math.max(0, 1 - Math.hypot(px - mouse.x, py - mouse.y) / 180);
+        const boost = 1 + near * 1.6;
+        for (let j = 1; j <= 7; j++){
+          const [tx, ty] = at(tr, p.s - j * 7);
+          cx.fillStyle = `rgba(${rgb},${(0.28 - j * 0.035) * a * boost})`;
+          cx.beginPath(); cx.arc(tx, ty, 1.6, 0, Math.PI * 2); cx.fill();
+        }
+        if (p.s >= 0 && p.s <= tr.total){
+          const r = 9 * boost;
+          const rg = cx.createRadialGradient(px, py, 0, px, py, r);
+          rg.addColorStop(0, `rgba(${rgb},${0.55 * a})`); rg.addColorStop(1, `rgba(${rgb},0)`);
+          cx.fillStyle = rg; cx.beginPath(); cx.arc(px, py, r, 0, Math.PI * 2); cx.fill();
+          cx.fillStyle = `rgba(240,240,255,${0.9 * a})`;
+          cx.beginPath(); cx.arc(px, py, 1.7, 0, Math.PI * 2); cx.fill();
+        }
+      }
+    }
+  }
+
+  let last = performance.now(), running = true;
+  function loop(now){
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (running) draw(dt);
+    requestAnimationFrame(loop);
+  }
+  addEventListener("resize", resize);
+  addEventListener("pointermove", e => { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
+  document.addEventListener("pointerleave", () => { mouse.x = mouse.y = -9999; });
+  document.addEventListener("visibilitychange", () => { running = !document.hidden; last = performance.now(); });
+  resize();
+  if (REDUCE) draw(0); else requestAnimationFrame(loop);
+})();
+
+/* ---------- Header solid on scroll ---------- */
+const hdr = $("hdr");
+const onScrollHdr = () => hdr.classList.toggle("solid", scrollY > 20);
+addEventListener("scroll", onScrollHdr, { passive: true }); onScrollHdr();
+
+/* ---------- Rotating headline word ---------- */
+(() => {
+  if (REDUCE) return;
+  const el = $("rot"), words = ["online.", "on Google.", "on phones.", "on autopilot."];
+  let wi = 0, ci = words[0].length, del = true;
+  function tick(){
+    const w = words[wi];
+    if (del){
+      ci--; el.textContent = w.slice(0, ci);
+      if (ci <= 0){ del = false; wi = (wi + 1) % words.length; }
+      setTimeout(tick, 45);
+    } else {
+      const nw = words[wi]; ci++; el.textContent = nw.slice(0, ci);
+      if (ci >= nw.length){ del = true; setTimeout(tick, 2400); } else setTimeout(tick, 80);
+    }
+  }
+  setTimeout(tick, 3000);
+})();
+
+/* ---------- Hero IDE: code writes itself, app appears on the phone ---------- */
+(() => {
+  const SC = [
+    { file: "demo/supermarket-app.jsx", kind: "mobile app", lines: [
+      ['<Header title="Hill Fresh Mart" />', '<div class="b-head">Hill Fresh Mart<i></i></div>'],
+      ['<Search placeholder="Rice, dal, milk…" />', '<div class="b-search">Rice, dal, milk…</div>'],
+      ['<Offers items={todayDeals} />', '<div class="b-banner">10% off vegetables<small>Today only, free delivery</small></div>'],
+      ['<ProductGrid category="Groceries" />', '<div class="b-grid"><span></span><span></span><span></span><span></span></div>'],
+      ['<CartButton via="WhatsApp" />', '<div class="b-cta">Order on WhatsApp</div>'] ]},
+    { file: "demo/homestay-site.html", kind: "website", lines: [
+      ['<nav brand="Misty Hill Stay" />', '<div class="b-head">Misty Hill Stay<i></i></div>'],
+      ['<Hero img="tea-estate.jpg" />', '<div class="b-hero"></div>'],
+      ['<Rooms count={4} />', '<div class="b-row"><span></span><span></span></div>'],
+      ['<Map town="Coonoor" />', '<div class="b-map"></div>'],
+      ['<button>Book now</button>', '<div class="b-book">Book now</div>'] ]},
+    { file: "demo/stock-crm.tsx", kind: "crm", lines: [
+      ['<Title text="Store dashboard" />', '<div class="b-head">Store dashboard<i></i></div>'],
+      ['<KPI label="Sales today" />', '<div class="b-kpi"><div>₹48,250<small>Sales today</small></div><div>312<small>Orders</small></div></div>'],
+      ['<Chart range="7d" />', '<div class="b-chart"><span style="height:40%"></span><span style="height:65%;animation-delay:.05s"></span><span style="height:50%;animation-delay:.1s"></span><span style="height:80%;animation-delay:.15s"></span><span style="height:60%;animation-delay:.2s"></span><span style="height:95%;animation-delay:.25s"></span><span style="height:75%;animation-delay:.3s"></span></div>'],
+      ['<LowStock alert="Sugar 5kg" />', '<div class="b-alert">Low stock: Sugar 5 kg, 3 left</div>'],
+      ['<Customers top={5} />', '<div class="b-list"><span></span><span></span><span></span></div>'] ]}
+  ];
+  const code = $("code"), screen = $("screen"), file = $("ideFile"), badge = $("ideBadge"), kind = $("ideKind");
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const hl = s => s.replace(/"[^"]*"?|<\/?[A-Za-z]+|\b[a-z]{2,}(?==)|[\s\S]/g, m => {
+    if (m[0] === '"') return '<span class="tk-str">' + esc(m) + '</span>';
+    if (m[0] === '<' && m.length > 1){ const k = m[1] === '/' ? 2 : 1; return esc(m.slice(0, k)) + '<span class="tk-tag">' + m.slice(k) + '</span>'; }
+    if (m.length > 1) return '<span class="tk-attr">' + m + '</span>';
+    return esc(m);
+  });
+  const comment = sc => `<span class="l"><span class="tk-com">// ${sc.kind} · built by LaunchStack</span></span>`;
+
+  function renderFull(sc){
+    file.textContent = sc.file; kind.textContent = sc.kind;
+    code.innerHTML = comment(sc) + sc.lines.map(l => `<span class="l">${hl(l[0])}</span>`).join("");
+    screen.innerHTML = sc.lines.map(l => l[1]).join("");
+    badge.textContent = "✓ live"; badge.classList.add("live");
+  }
+  renderFull(SC[0]);
+  if (REDUCE) return;
+
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  async function play(sc){
+    code.style.opacity = 0; screen.style.opacity = 0;
+    await wait(400);
+    file.textContent = sc.file; kind.textContent = sc.kind;
+    badge.textContent = "building…"; badge.classList.remove("live");
+    code.innerHTML = comment(sc); screen.innerHTML = "";
+    code.style.opacity = 1; screen.style.opacity = 1;
+    await wait(300);
+    for (const [src, blk] of sc.lines){
+      const line = document.createElement("span"); line.className = "l"; code.appendChild(line);
+      for (let i = 1; i <= src.length; i++){
+        line.innerHTML = hl(src.slice(0, i)) + '<span class="cur"></span>';
+        await wait(22 + Math.random() * 30);
+      }
+      line.innerHTML = hl(src);
+      screen.insertAdjacentHTML("beforeend", blk);
+      await wait(260);
+    }
+    badge.textContent = "✓ live"; badge.classList.add("live");
+    await wait(3200);
+  }
+  (async () => {
+    await wait(3500);
+    let i = 1;
+    while (true){ await play(SC[i]); i = (i + 1) % SC.length; }
+  })();
+})();
+
+/* ---------- Scroll reveals ---------- */
+(() => {
+  const els = document.querySelectorAll(".rv");
+  if (REDUCE || !("IntersectionObserver" in window)){ els.forEach(e => e.classList.add("on")); return; }
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting){
+      const sibs = [...e.target.parentElement.children].filter(c => c.classList.contains("rv"));
+      e.target.style.transitionDelay = (sibs.indexOf(e.target) * 0.09) + "s";
+      e.target.classList.add("on"); io.unobserve(e.target);
+    }
+  }), { threshold: .15 });
+  els.forEach(e => io.observe(e));
+})();
+
+/* ---------- Card spotlight + magnetic buttons ---------- */
+document.querySelectorAll(".card").forEach(c => c.addEventListener("pointermove", e => {
+  const r = c.getBoundingClientRect();
+  c.style.setProperty("--mx", (e.clientX - r.left) + "px");
+  c.style.setProperty("--my", (e.clientY - r.top) + "px");
+}));
+if (!REDUCE) document.querySelectorAll(".mag").forEach(b => {
+  b.addEventListener("pointermove", e => {
+    const r = b.getBoundingClientRect();
+    b.style.transform = `translate(${(e.clientX - r.left - r.width/2) * .18}px, ${(e.clientY - r.top - r.height/2) * .25}px)`;
+  });
+  b.addEventListener("pointerleave", () => { b.style.transform = ""; });
+});
+
+/* ---------- Process rail fills as you scroll ---------- */
+(() => {
+  const wrap = $("steps"), fill = $("railFill"), steps = wrap.querySelectorAll(".step");
+  function upd(){
+    const r = wrap.getBoundingClientRect(), vh = innerHeight;
+    const p = Math.max(0, Math.min(1, (vh * .75 - r.top) / (r.height + vh * .25)));
+    fill.style.setProperty("--p", (p * 100) + "%");
+    steps.forEach((s, i) => s.classList.toggle("lit", p >= (i / steps.length) + .02 || REDUCE));
+  }
+  addEventListener("scroll", upd, { passive: true }); addEventListener("resize", upd); upd();
+})();
+
+/* ---------- Terminal deploy log ---------- */
+(() => {
+  const out = $("termOut");
+  const L = [
+    ['p', '$ launchstack new --client "your business"'],
+    ['dim', '› understanding how you work … done'],
+    ['dim', '› clickable prototype ready, shared on WhatsApp'],
+    ['dim', '› your feedback: 3 changes … applied'],
+    ['p', '$ launchstack build --app --web --crm'],
+    ['dim', '› building … tested on 12 phones'],
+    ['p', '$ launchstack deploy --domain yourbusiness.in'],
+    ['ok', '✓ live at https://yourbusiness.in'],
+    ['ok', '✓ support switched on']
+  ];
+  const full = () => L.map(([c, t]) => `<span class="${c}">${t.replace(/</g,"&lt;")}</span>`).join("\n");
+  out.innerHTML = full();
+  if (REDUCE || !("IntersectionObserver" in window)) return;
+  let played = false;
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  async function play(){
+    out.innerHTML = "";
+    for (const [c, t] of L){
+      const s = document.createElement("span"); s.className = c; out.appendChild(s);
+      const speed = c === "p" ? 28 : 8;
+      for (let i = 1; i <= t.length; i++){ s.textContent = t.slice(0, i); await wait(speed); }
+      out.appendChild(document.createTextNode("\n"));
+      await wait(c === "p" ? 300 : 420);
+    }
+  }
+  new IntersectionObserver((es, o) => es.forEach(e => {
+    if (e.isIntersecting && !played){ played = true; o.disconnect(); play(); }
+  }), { threshold: .4 }).observe($("term"));
+})();
+
+/* ---------- Contact: WhatsApp enquiry ---------- */
+$("emailText").textContent = EMAIL;
+if (!/X/.test(WHATSAPP_NUMBER)){
+  const n = WHATSAPP_NUMBER.replace(/^91/, "");
+  $("phoneText").textContent = "+91 " + n.slice(0,5) + " " + n.slice(5);
+}
+const btn = $("sendWa");
+function buildLink(){
+  const msg = [
+    "Hi LaunchStack, I'd like to discuss a project.",
+    "Name: " + $("f-name").value.trim(),
+    $("f-biz").value.trim() ? "Business/idea: " + $("f-biz").value.trim() : "",
+    "Need: " + $("f-need").value,
+    $("f-msg").value.trim() ? "Details: " + $("f-msg").value.trim() : ""
+  ].filter(Boolean).join("\n");
+  btn.href = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(msg);
+}
+["f-name","f-biz","f-need","f-msg"].forEach(id => $(id).addEventListener("input", buildLink));
+buildLink();
+btn.addEventListener("click", e => {
+  if (!$("f-name").value.trim()){
+    e.preventDefault();
+    $("f-err").textContent = "Please add your name so we know who to reply to.";
+    $("f-name").focus();
+  } else $("f-err").textContent = "";
+});
+$("enquiry").addEventListener("submit", e => e.preventDefault());
+</script>
+</body>
+</html>
